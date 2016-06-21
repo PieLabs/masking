@@ -1,0 +1,206 @@
+<link rel="import" href="../polymer/polymer.html">
+<script src="../interact/dist/interact.js"></script>
+<dom-module id="corespring-mask">
+
+  <style>
+    #holder{
+      background-color: rgba(0,0,0, 0.5);
+      position: absolute;
+      display: none;
+    }
+
+    #holder.visible {
+      display: block;
+    }
+
+  </style>
+  <template>
+    <div id="holder" class$="{{getClass(editable, visible)}}">
+      <button on-click="triggerDelete">delete</button>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: 'corespring-mask',
+    properties: {
+      visible: {
+        type: Boolean,
+        value: false
+      },
+      editable: {
+        type: Boolean,
+        value: false
+      },
+      model: {
+        type: Object,
+        notify: true
+      },
+      relativeTo: {
+        type: String,
+        notify: true
+      }
+    },
+    triggerDelete: function(){
+      this.fire('delete-mask', this.model);
+    },
+    observers: [
+      'onUpdate(editable, visible, model, relativeTo)'
+    ],
+
+    ready: function(){
+
+      function onDrag (event) {
+        var target = event.target,
+            // keep the dragged position in the data-x/data-y attributes
+            x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
+            y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+        // translate the element
+        target.style.webkitTransform =
+        target.style.transform =
+          'translate(' + x + 'px, ' + y + 'px)';
+
+        // update the posiion attributes
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+
+        this.model.x = x;
+        this.model.y = y;
+      }
+
+      function onResizeMove (event) {
+        var target = event.target,
+            x = (parseFloat(target.getAttribute('data-x')) || 0),
+            y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+        // update the element's style
+        this.model.w  = event.rect.width; 
+        this.model.h = event.rect.height;
+
+        target.style.width  = event.rect.width + 'px';
+        target.style.height = event.rect.height + 'px';
+
+        // translate when resizing from top or left edges
+        x += event.deltaRect.left;
+        y += event.deltaRect.top;
+
+        target.style.webkitTransform = target.style.transform =
+             'translate(' + x + 'px,' + y + 'px)';
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+
+        this.model.x = x;
+        this.model.y = y;
+      };
+
+       var d = interact(this.$.holder)
+        .draggable({
+          onmove: onDrag.bind(this)
+        })
+        .resizable({
+          preserveAspectRatio: false,
+          edges: { left: true, right: true, bottom: true, top: true }
+        })
+        .on('resizemove',onResizeMove.bind(this));
+
+    },
+    getClass: function(editable, visible){
+      var out = []; 
+      if(editable){
+        out.push('editable');
+      }
+      if(visible){
+        out.push('visible');
+      }
+      return out.join(' ');
+    },
+    onUpdate: function(editable, visible, model, relativeTo){
+
+      var node = document.querySelector('#' + this.relativeTo);
+
+      if(!node){
+        throw new Error('can not find node with: #' + this.relativeTo);
+      }
+
+      var rect = node.getBoundingClientRect();
+      this.$.holder.style.setProperty('width', model.w + 'px');
+      this.$.holder.style.setProperty('height', model.h + 'px');
+      this.$.holder.style.setProperty('left', (rect.left + model.x) + 'px');
+      this.$.holder.style.setProperty('top', (rect.top + model.y) + 'px');
+    }
+  });
+
+</script>
+
+<dom-module id="corespring-masking">
+  <template>
+    <label>masking visible: {{visible}}, editable: {{editable}}</label>
+    <template is="dom-repeat" items="{{model}}" id="repeater">
+      <corespring-mask 
+        relative-to="{{target}}" 
+        visible="{{visible}}" 
+        editable="{{editable}}"
+        on-delete-mask="deleteMask" 
+        model="{{item}}">
+      </corespring-mask>
+    </template>
+  </template>
+ </dom-module>
+<script>
+  Polymer({
+      is: 'corespring-masking',
+      properties: {
+        target: {
+          type: String,
+          notify: true
+        },
+        model: {
+          type: Object,
+          notify: true,
+          observer: 'onModelChanged'
+        },
+        visible: {
+          type: Boolean,
+          value: false
+        },
+        editable: {
+          type: Boolean,
+          value: false
+        }
+      },
+      deleteMask: function(event){
+        console.log('masking delete: ', arguments);
+        var index = this.model.indexOf(event.detail);
+        if(index !== -1){
+          this.model.splice(index, 1);
+        }
+        this.set('model', this.model);
+        this.$.repeater.render();
+      },
+      ready: function(){
+        var node = document.querySelector('#' + this.target);
+
+        if(!node){
+          throw new Error('can not find node');
+        }
+
+        node.addEventListener('mouseup', function(event){
+          this.model.push({x: 0, y: 0, w: 20, h: 20});
+          this.set('model', this.model);
+          this.$.repeater.render();
+        }.bind(this));
+
+      },
+      observers: [
+        'onTargetAndModelChanged(target, model)'
+      ],
+      onTargetAndModelChanged: function(target, model){
+        console.log( ">>", arguments);
+      },
+      onModelChanged: function(newValue, oldValue){
+        console.log('mc: ', newValue, oldValue);
+      }
+    });
+  </script>
