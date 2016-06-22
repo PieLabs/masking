@@ -76,24 +76,20 @@
       console.log('onModelChange: model: ', this.model);
     },
     ready: function(){
-      console.log('ready: model: ', this.model);
+      
       function onDrag (event) {
-        
         if(!this.editable){
           return;
         }
 
         var target = event.target,
-            // keep the dragged position in the data-x/data-y attributes
             x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
             y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
 
-        // translate the element
         target.style.webkitTransform =
         target.style.transform =
           'translate(' + x + 'px, ' + y + 'px)';
 
-        // update the posiion attributes
         target.setAttribute('data-x', x);
         target.setAttribute('data-y', y);
         this.updateModelXY(event.target);
@@ -109,14 +105,12 @@
             x = (parseFloat(target.getAttribute('data-x')) || 0),
             y = (parseFloat(target.getAttribute('data-y')) || 0);
 
-        // update the element's style
         this.model.w  = event.rect.width; 
         this.model.h = event.rect.height;
 
         target.style.width  = event.rect.width + 'px';
         target.style.height = event.rect.height + 'px';
 
-        // translate when resizing from top or left edges
         x += event.deltaRect.left;
         y += event.deltaRect.top;
 
@@ -153,8 +147,8 @@
       var root = document.querySelector(this.relativeTo);
       var rootRect = root.getBoundingClientRect();
       var nodeRect = node.getBoundingClientRect();
-      this.model.x = nodeRect.left - rootRect.left;
-      this.model.y = nodeRect.top - rootRect.top;
+      this.model.x = (rootRect.left - nodeRect.left) * -1;
+      this.model.y = (rootRect.top - nodeRect.top) * -1;
     },
     onUpdate: function(editable, visible, model, relativeTo){
 
@@ -167,8 +161,15 @@
       var rect = node.getBoundingClientRect();
       this.$.holder.style.setProperty('width', model.w + 'px');
       this.$.holder.style.setProperty('height', model.h + 'px');
-      this.$.holder.style.setProperty('left', (rect.left + model.x) + 'px');
-      this.$.holder.style.setProperty('top', (rect.top + model.y) + 'px');
+
+      var x = rect.left + model.x;
+      var y = rect.top + model.y;
+
+      this.$.holder.style.setProperty('transform', 'translate(0px,0px)');
+      this.$.holder.removeAttribute('data-x');
+      this.$.holder.removeAttribute('data-y');
+      this.$.holder.style.setProperty('left', x + 'px');
+      this.$.holder.style.setProperty('top', y + 'px');
     }
   });
 
