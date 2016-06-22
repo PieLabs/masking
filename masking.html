@@ -279,7 +279,7 @@
         }); 
 
         node.addEventListener('mouseup', function(event){
-          if(armed){
+          if(armed && this.editable){
             this.push('model', {x: event.offsetX, y: event.offsetY, w: 50, h: 50});
           }
           armed = false;
