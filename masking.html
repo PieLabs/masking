@@ -174,8 +174,23 @@
 
 </script>
 <dom-module id="masking-button">
+  <style>
+     :host {
+        display: inline-block;
+        cursor: pointer;
+      }
+      iron-icon {
+        fill: var(--icon-toggle-color, rgba(0,0,0,0.4));
+      }
+      :host(:hover) iron-icon {
+        fill: var(--icon-toggle-pressed-color, rgba(0,0,0,0.6));
+      }    
+      :host([pressed]) iron-icon {
+        fill: var(--icon-toggle-pressed-color, rgba(0,0,0,0.8));
+      }    
+  </style>
   <template>
-    <iron-icon icon="icons:open-with"></iron-icon>
+    <iron-icon icon="icons:group-work"></iron-icon>
   </template>
 </dom-module>
 <script>
@@ -188,7 +203,7 @@
       pressed: {
         type: Boolean,
         notify: true,
-        reflectToAttribute: false,
+        reflectToAttribute: true,
         value: false
       }
     },
@@ -198,7 +213,7 @@
     toggle: function(){
       this.pressed = !this.pressed;
 
-      var node = document.querySelector(target);
+      var node = document.querySelector(this.target);
 
       if(node){
         node.visible = this.pressed;
