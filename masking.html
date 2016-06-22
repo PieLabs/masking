@@ -150,7 +150,7 @@
     },
 
     updateModelXY: function(node){
-      var root = document.querySelector('#' + this.relativeTo);
+      var root = document.querySelector(this.relativeTo);
       var rootRect = root.getBoundingClientRect();
       var nodeRect = node.getBoundingClientRect();
       this.model.x = nodeRect.left - rootRect.left;
@@ -158,7 +158,7 @@
     },
     onUpdate: function(editable, visible, model, relativeTo){
 
-      var node = document.querySelector('#' + this.relativeTo);
+      var node = document.querySelector(this.relativeTo);
 
       if(!node){
         throw new Error('can not find node with: #' + this.relativeTo);
@@ -173,10 +173,42 @@
   });
 
 </script>
+<dom-module id="masking-button">
+  <template>
+    <iron-icon icon="icons:open-with"></iron-icon>
+  </template>
+</dom-module>
+<script>
+  Polymer({
+    is: 'masking-button',
+    properties: {
+      target: {
+        type: String
+      },
+      pressed: {
+        type: Boolean,
+        notify: true,
+        reflectToAttribute: false,
+        value: false
+      }
+    },
+    listeners: {
+      tap: 'toggle',
+    },
+    toggle: function(){
+      this.pressed = !this.pressed;
 
+      var node = document.querySelector(target);
+
+      if(node){
+        node.visible = this.pressed;
+        node.editable = this.pressed;
+      }
+    }   
+  });
+</script>
 <dom-module id="corespring-masking">
   <template>
-    <label>masking visible: {{visible}}, editable: {{editable}}</label>
     <template is="dom-repeat" items="{{model}}" id="repeater">
       <corespring-mask 
         relative-to="{{target}}" 
@@ -218,7 +250,7 @@
         }
       },
       ready: function(){
-        var node = document.querySelector('#' + this.target);
+        var node = document.querySelector(this.target);
 
         if(!node){
           throw new Error('can not find node');
