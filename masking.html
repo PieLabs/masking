@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
 <script src="../interact/dist/interact.js"></script>
 <dom-module id="corespring-mask">
 
@@ -7,16 +8,38 @@
       background-color: rgba(0,0,0, 0.5);
       position: absolute;
       display: none;
+      border-radius: 6px;
     }
 
     #holder.visible {
       display: block;
     }
 
+    iron-icon {
+      fill: rgba(255,255,255,0.5);
+      float: right;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      position: relative;
+      right: 2px;
+      top: 2px; 
+      display: none;
+    }
+    iron-icon.visible.editable{
+      display: block;
+    }
+    iron-icon:hover {
+      fill: rgba(255,255,255,1.0);
+    }
+
   </style>
   <template>
     <div id="holder" class$="{{getClass(editable, visible)}}">
-      <button on-click="triggerDelete">delete</button>
+     <iron-icon
+       on-click="triggerDelete"
+       class$="{{getClass(editable, visible)}}" 
+       icon="icons:cancel"></iron-icon>
     </div>
   </template>
 </dom-module>
@@ -35,7 +58,8 @@
       },
       model: {
         type: Object,
-        notify: true
+        notify: true,
+        observer: 'onModelChange'
       },
       relativeTo: {
         type: String,
@@ -48,10 +72,17 @@
     observers: [
       'onUpdate(editable, visible, model, relativeTo)'
     ],
-
+    onModelChange: function(){
+      console.log('onModelChange: model: ', this.model);
+    },
     ready: function(){
-
+      console.log('ready: model: ', this.model);
       function onDrag (event) {
+        
+        if(!this.editable){
+          return;
+        }
+
         var target = event.target,
             // keep the dragged position in the data-x/data-y attributes
             x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
@@ -65,12 +96,15 @@
         // update the posiion attributes
         target.setAttribute('data-x', x);
         target.setAttribute('data-y', y);
-
-        this.model.x = x;
-        this.model.y = y;
+        this.updateModelXY(event.target);
       }
 
       function onResizeMove (event) {
+
+        if(!this.editable){
+          return;
+        }
+
         var target = event.target,
             x = (parseFloat(target.getAttribute('data-x')) || 0),
             y = (parseFloat(target.getAttribute('data-y')) || 0);
@@ -90,9 +124,7 @@
              'translate(' + x + 'px,' + y + 'px)';
         target.setAttribute('data-x', x);
         target.setAttribute('data-y', y);
-
-        this.model.x = x;
-        this.model.y = y;
+        this.updateModelXY(event.target);
       };
 
        var d = interact(this.$.holder)
@@ -115,6 +147,14 @@
         out.push('visible');
       }
       return out.join(' ');
+    },
+
+    updateModelXY: function(node){
+      var root = document.querySelector('#' + this.relativeTo);
+      var rootRect = root.getBoundingClientRect();
+      var nodeRect = node.getBoundingClientRect();
+      this.model.x = nodeRect.left - rootRect.left;
+      this.model.y = nodeRect.top - rootRect.top;
     },
     onUpdate: function(editable, visible, model, relativeTo){
 
@@ -174,10 +214,8 @@
         console.log('masking delete: ', arguments);
         var index = this.model.indexOf(event.detail);
         if(index !== -1){
-          this.model.splice(index, 1);
+          this.splice('model', index, 1);
         }
-        this.set('model', this.model);
-        this.$.repeater.render();
       },
       ready: function(){
         var node = document.querySelector('#' + this.target);
@@ -186,12 +224,18 @@
           throw new Error('can not find node');
         }
 
-        node.addEventListener('mouseup', function(event){
-          this.model.push({x: 0, y: 0, w: 20, h: 20});
-          this.set('model', this.model);
-          this.$.repeater.render();
-        }.bind(this));
+        var armed = false;
 
+        node.addEventListener('mousedown', function(event){
+          armed = true;
+        }); 
+
+        node.addEventListener('mouseup', function(event){
+          if(armed){
+            this.push('model', {x: event.offsetX, y: event.offsetY, w: 50, h: 50});
+          }
+          armed = false;
+        }.bind(this));
       },
       observers: [
         'onTargetAndModelChanged(target, model)'

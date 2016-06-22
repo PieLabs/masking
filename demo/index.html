@@ -21,9 +21,7 @@
           var editable = document.querySelector('#checkbox-editable');
 
           mask.model = [
-            {x: 20, y: 40, w: 50, h:80},
-            {x: 50, y: 30, w: 80, h:100},
-            {x: 100, y: 30, w: 80, h:100}
+            //{x: 20, y: 40, w: 50, h:80}
           ];     
           visible.addEventListener('click', function(){
             mask.visible = this.checked;
@@ -34,10 +32,11 @@
           });
 
           function logModel(){
-            console.log(JSON.stringify(mask.model, null, '  '));
-            setTimeout(logModel, 1000);
+            var json = JSON.stringify(mask.model, null, '  ');
+            document.querySelector('#info').value = json; 
+            setTimeout(logModel, 100);
           }
-
+          
           logModel();
       });
     </script>
@@ -49,5 +48,7 @@
     <label><input id="checkbox-editable" type="checkbox">Editable</label>
 
     <div id="some-div"></div>
+
+    <textarea id="info"></textarea>
   </body>
 </html>
